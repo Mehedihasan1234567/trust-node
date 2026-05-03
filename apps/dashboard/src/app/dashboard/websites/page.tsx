@@ -59,7 +59,8 @@ export default async function WebsitesPage() {
       ) : (
         <div className="grid gap-4">
           {websites.map((site: { id: string; domain: string; displayName: string | null; isActive: boolean; verification: string; widgetConfig: unknown; scanResults: unknown[] }) => (
-            <Card key={site.id}>
+            <Link key={site.id} href={`/dashboard/websites/${site.id}`}>
+            <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -102,6 +103,7 @@ export default async function WebsitesPage() {
                 </Button>
               </CardContent>
             </Card>
+            </Link>
           ))}
         </div>
       )}

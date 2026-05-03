@@ -12,6 +12,7 @@ import {
   FileText,
   Settings,
   Users,
+  Key,
   LogOut,
 } from "lucide-react";
 import { signOut } from "@/app/(auth)/actions";
@@ -24,6 +25,7 @@ interface SidebarProps {
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/dashboard/websites", label: "Websites", icon: Globe },
+  { href: "/dashboard/api-keys", label: "API Keys", icon: Key },
   { href: "/dashboard/labels", label: "AI Labels", icon: Tags },
   { href: "/dashboard/reports", label: "Reports", icon: FileText },
   { href: "/dashboard/usage", label: "Usage", icon: BarChart3 },
