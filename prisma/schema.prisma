@@ -1,0 +1,244 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ──── User (synced with Supabase Auth) ────
+
+model User {
+  id          String               @id
+  email       String               @unique
+  name        String?
+  avatarUrl   String?
+  memberships OrganizationMember[]
+  apiKeys     ApiKey[]
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+}
+
+// ──── Organization & Multi-tenancy ────
+
+model Organization {
+  id           String               @id @default(uuid())
+  name         String
+  slug         String               @unique
+  plan         Plan                 @default(FREE)
+  stripeId     String?              @unique
+  members      OrganizationMember[]
+  websites     Website[]
+  apiKeys      ApiKey[]
+  auditLogs    AuditLog[]
+  subscription Subscription?
+  usageRecords UsageRecord[]
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+}
+
+model OrganizationMember {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           UserRole     @default(MEMBER)
+  createdAt      DateTime     @default(now())
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum Plan {
+  FREE
+  STARTER
+  PRO
+  ENTERPRISE
+}
+
+// ──── API Keys ────
+
+model ApiKey {
+  id             String       @id @default(uuid())
+  key            String       @unique
+  prefix         String
+  name           String
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy      String
+  creator        User         @relation(fields: [createdBy], references: [id])
+  lastUsedAt     DateTime?
+  expiresAt      DateTime?
+  isRevoked      Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+
+  @@index([key])
+  @@index([organizationId])
+}
+
+// ──── Websites ────
+
+model Website {
+  id               String                    @id @default(uuid())
+  domain           String                    @unique
+  displayName      String?
+  organizationId   String
+  organization     Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  verification     WebsiteVerificationStatus @default(PENDING)
+  verificationCode String?
+  isActive         Boolean                   @default(true)
+  widgetConfig     WidgetConfig?
+  scanResults      ScanResult[]
+  usageRecords     UsageRecord[]
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
+
+  @@index([organizationId])
+  @@index([domain])
+}
+
+enum WebsiteVerificationStatus {
+  PENDING
+  VERIFIED
+  FAILED
+}
+
+// ──── Widget Configuration ────
+
+model WidgetConfig {
+  id               String         @id @default(uuid())
+  websiteId        String         @unique
+  website          Website        @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  theme            WidgetTheme    @default(AUTO)
+  position         WidgetPosition @default(INLINE_ONLY)
+  autoScan         Boolean        @default(true)
+  scanText         Boolean        @default(true)
+  scanImages       Boolean        @default(true)
+  disclosurePrefix String?        @default("AI Disclosure:")
+  language         String         @default("en")
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+}
+
+enum WidgetTheme {
+  LIGHT
+  DARK
+  AUTO
+}
+
+enum WidgetPosition {
+  TOP_BANNER
+  BOTTOM_BAR
+  INLINE_ONLY
+  MODAL_ONLY
+}
+
+// ──── Scan Results ────
+
+model ScanResult {
+  id             String      @id @default(uuid())
+  websiteId      String
+  website        Website     @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  pageUrl        String
+  contentHash    String
+  contentType    ContentType
+  contentPreview String?
+  contentData    String?
+  verdict        Verdict?
+  confidence     Float?
+  rawResponse    Json?
+  disclosureMsg  String?
+  scanStatus     ScanStatus  @default(PENDING)
+  scannedAt      DateTime?
+  createdAt      DateTime    @default(now())
+
+  @@unique([pageUrl, contentHash])
+  @@index([websiteId, createdAt(sort: Desc)])
+  @@index([pageUrl])
+  @@index([contentHash])
+}
+
+enum ContentType {
+  TEXT
+  IMAGE
+  VIDEO
+  AUDIO
+  DEEPFAKE
+}
+
+enum ScanStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum Verdict {
+  AI_GENERATED
+  AI_MANIPULATED
+  HUMAN_CREATED
+  UNCERTAIN
+}
+
+// ──── Usage Tracking ────
+
+model UsageRecord {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  websiteId      String?
+  website        Website?     @relation(fields: [websiteId], references: [id], onDelete: SetNull)
+  apiKeyId       String?
+  action         String
+  count          Int          @default(1)
+  date           DateTime     @default(now())
+
+  @@index([organizationId, date])
+  @@index([organizationId, action, date])
+}
+
+// ──── Audit Log (EU AI Act Compliance) ────
+
+model AuditLog {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  action         String
+  resourceType   String?
+  resourceId     String?
+  metadata       Json?
+  performedBy    String
+  ipAddress      String?
+  userAgent      String?
+  timestamp      DateTime     @default(now())
+
+  @@index([organizationId, timestamp(sort: Desc)])
+  @@index([organizationId, action, timestamp(sort: Desc)])
+}
+
+// ──── Billing ────
+
+model Subscription {
+  id                 String       @id @default(uuid())
+  organizationId     String       @unique
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  plan               Plan         @default(FREE)
+  status             String       @default("active")
+  stripeSubId        String?      @unique
+  scanQuota          Int          @default(1000)
+  scanUsed           Int          @default(0)
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  canceledAt         DateTime?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+}
