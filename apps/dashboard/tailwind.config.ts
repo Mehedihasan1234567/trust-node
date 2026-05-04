@@ -2,7 +2,6 @@ import type { Config } from "tailwindcss";
 import animate from "tailwindcss-animate";
 
 const config: Config = {
-  darkMode: ["class"],
   content: [
     "./src/**/*.{ts,tsx}",
     "../../packages/shared/src/**/*.{ts,tsx}",
@@ -51,17 +50,17 @@ const config: Config = {
           foreground: "hsl(var(--card-foreground))",
         },
         brand: {
-          50: "#eff6ff",
-          100: "#dbeafe",
-          200: "#bfdbfe",
-          300: "#93c5fd",
-          400: "#60a5fa",
-          500: "#3b82f6",
-          600: "#2563eb",
-          700: "#1d4ed8",
-          800: "#1e40af",
-          900: "#1e3a8a",
-          950: "#172554",
+          50: "#f0f3f8",
+          100: "#d9e0ed",
+          200: "#b3c1db",
+          300: "#8da2c9",
+          400: "#6783b7",
+          500: "#4A6FA5",
+          600: "#3d5d8a",
+          700: "#304b6f",
+          800: "#233954",
+          900: "#162739",
+          950: "#0a131d",
         },
       },
       borderRadius: {
