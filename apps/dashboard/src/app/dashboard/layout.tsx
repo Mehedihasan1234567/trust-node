@@ -30,11 +30,11 @@ export default async function DashboardLayout({
   const org = membership.organization;
 
   return (
-    <div className="flex min-h-screen">
+    <div className="dashboard flex min-h-screen bg-[#121212]">
       <DashboardSidebar org={org} user={user} />
-      <div className="flex-1 flex flex-col">
+      <div className="flex flex-1 flex-col">
         <DashboardHeader org={org} user={user} />
-        <main className="flex-1 p-6">{children}</main>
+        <main className="flex-1 p-6 lg:p-8">{children}</main>
       </div>
     </div>
   );

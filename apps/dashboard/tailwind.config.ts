@@ -62,6 +62,18 @@ const config: Config = {
           900: "#162739",
           950: "#0a131d",
         },
+        charcoal: {
+          900: '#0A0A0A',
+          800: '#111111',
+          700: '#1C1C1C',
+        },
+        'electric-green': '#00FFAB',
+        'carbon-mint': '#00FFC2',
+        'cyber-rose': '#EF5777',
+      },
+      fontFamily: {
+        clash: ['Clash Grotesk', 'sans-serif'],
+        general: ['General Sans', 'Inter', 'sans-serif'],
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -81,11 +93,16 @@ const config: Config = {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.4" },
         },
+        float: {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-20px)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "pulse-dot": "pulse-dot 2s ease-in-out infinite",
+        float: "float 6s ease-in-out infinite",
       },
     },
   },
