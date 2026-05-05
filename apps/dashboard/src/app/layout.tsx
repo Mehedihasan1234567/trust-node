@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import Script from "next/script";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "sonner";
 import "./globals.css";
@@ -28,7 +29,7 @@ export default function RootLayout({
         >
           {children}
 
-          <script src="https://cdn.certence.com/widget.js" data-api-key="tn_eac1c7447be4490b91616b45b4c48792"
+          <Script src="/widget.js" data-api-key="tn_eac1c7447be4490b91616b45b4c48792"
             strategy="afterInteractive"
           />
           <Toaster position="top-right" />

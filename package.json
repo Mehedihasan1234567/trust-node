@@ -4,7 +4,7 @@
   "scripts": {
     "dev": "pnpm --filter @trust-node/dashboard dev",
     "dev:widget": "pnpm --filter @trust-node/widget dev",
-    "build": "pnpm -r build",
+    "build": "pnpm --filter @trust-node/widget build && pnpm --filter @trust-node/dashboard build",
     "build:dashboard": "pnpm --filter @trust-node/dashboard build",
     "build:widget": "pnpm --filter @trust-node/widget build",
     "lint": "pnpm -r lint",

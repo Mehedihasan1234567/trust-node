@@ -1,0 +1,5 @@
+{
+  "buildCommand": "pnpm --filter @trust-node/widget build && pnpm --filter @trust-node/dashboard build",
+  "installCommand": "pnpm install",
+  "outputDirectory": "apps/dashboard/.next"
+}

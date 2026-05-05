@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "rollup -c -w",
-    "build": "rollup -c",
+    "build": "rollup -c && mkdir -p ../dashboard/public && cp dist/widget.js ../dashboard/public/widget.js",
     "lint": "svelte-check",
     "typecheck": "svelte-check"
   },
