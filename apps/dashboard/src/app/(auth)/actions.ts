@@ -26,44 +26,60 @@ export async function login(formData: FormData) {
 export async function signup(formData: FormData) {
   const supabase = await createClient();
 
+  const { data: authData, error } = await supabase.auth.signUp({
+    email: formData.get("email") as string,
+    password: formData.get("password") as string,
+    options: {
+      data: {
+        name: formData.get("name") as string,
+      },
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL || "https://trust-node-dashboard.vercel.app"}/auth/callback`,
+    },
+  });
+
   const data = {
     email: formData.get("email") as string,
     password: formData.get("password") as string,
     name: formData.get("name") as string,
   };
 
-  const { data: authData, error } = await supabase.auth.signUp(data);
-
   if (error) {
     redirect(`/signup?error=${encodeURIComponent(error.message)}`);
   }
 
   if (authData.user) {
-    const slug = data.email.split("@")[0]?.toLowerCase().replace(/[^a-z0-9]/g, "-") || "org";
+    const baseSlug = data.email.split("@")[0]?.toLowerCase().replace(/[^a-z0-9]/g, "-") || "org";
+    const randomSuffix = Math.random().toString(36).substring(2, 8);
+    const slug = `${baseSlug}-${randomSuffix}`;
 
-    // Sync user to Prisma
-    await prisma.user.upsert({
-      where: { id: authData.user.id },
-      update: { email: data.email, name: data.name },
-      create: {
-        id: authData.user.id,
-        email: data.email,
-        name: data.name,
-      },
-    });
+    try {
+      // Sync user to Prisma
+      await prisma.user.upsert({
+        where: { id: authData.user.id },
+        update: { email: data.email, name: data.name },
+        create: {
+          id: authData.user.id,
+          email: data.email,
+          name: data.name,
+        },
+      });
 
-    await prisma.organization.create({
-      data: {
-        name: data.name || data.email,
-        slug,
-        members: {
-          create: {
-            userId: authData.user.id,
-            role: "OWNER",
+      await prisma.organization.create({
+        data: {
+          name: data.name || data.email,
+          slug,
+          members: {
+            create: {
+              userId: authData.user.id,
+              role: "OWNER",
+            },
           },
         },
-      },
-    });
+      });
+    } catch (dbError) {
+      console.error("Database sync error:", dbError);
+      redirect(`/signup?error=${encodeURIComponent("Failed to setup user account. Please try again.")}`);
+    }
   }
 
   // If email confirmation is required, user has no session yet
