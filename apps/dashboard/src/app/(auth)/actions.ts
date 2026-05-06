@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 
@@ -54,31 +55,61 @@ export async function signup(formData: FormData) {
 
     try {
       // Sync user to Prisma
-      await prisma.user.upsert({
+      let existingUser = await prisma.user.findUnique({
         where: { id: authData.user.id },
-        update: { email: data.email, name: data.name },
-        create: {
-          id: authData.user.id,
-          email: data.email,
-          name: data.name,
-        },
       });
 
-      await prisma.organization.create({
-        data: {
-          name: data.name || data.email,
-          slug,
-          members: {
-            create: {
-              userId: authData.user.id,
-              role: "OWNER",
+      if (!existingUser) {
+        existingUser = await prisma.user.findUnique({
+          where: { email: data.email },
+        });
+
+        if (existingUser) {
+          // User exists with this email but a different ID
+          try {
+            await prisma.user.update({
+              where: { email: data.email },
+              data: { id: authData.user.id, name: data.name },
+            });
+          } catch (e) {
+            console.error("Failed to update user ID during signup", e);
+          }
+        } else {
+          await prisma.user.create({
+            data: {
+              id: authData.user.id,
+              email: data.email,
+              name: data.name,
             },
-          },
-        },
-      });
-    } catch (dbError) {
-      console.error("Database sync error:", dbError);
-      redirect(`/signup?error=${encodeURIComponent("Failed to setup user account. Please try again.")}`);
+          });
+
+          await prisma.organization.create({
+            data: {
+              name: data.name || data.email,
+              slug,
+              members: {
+                create: {
+                  userId: authData.user.id,
+                  role: "OWNER",
+                },
+              },
+            },
+          });
+        }
+      } else {
+        // User exists by ID, update their details
+        await prisma.user.update({
+          where: { id: authData.user.id },
+          data: { email: data.email, name: data.name },
+        });
+      }
+    } catch (dbError: any) {
+      if (dbError.code === 'P2002') {
+        console.log("User already exists (caught P2002 in signup). Skipping creation.");
+      } else {
+        console.error("Database sync error:", dbError);
+        redirect(`/signup?error=${encodeURIComponent("Failed to setup user account. Please try again.")}`);
+      }
     }
   }
 
@@ -100,4 +131,28 @@ export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
   redirect("/login");
+}
+
+export async function signInWithGoogle() {
+  const supabase = await createClient();
+  
+  const headersList = await headers();
+  const host = headersList.get("host");
+  const protocol = headersList.get("x-forwarded-proto") || (host?.includes("localhost") ? "http" : "https");
+  const origin = `${protocol}://${host}`;
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${origin}/auth/callback`,
+    },
+  });
+
+  if (data.url) {
+    redirect(data.url);
+  }
+
+  if (error) {
+    redirect(`/login?error=${encodeURIComponent(error.message)}`);
+  }
 }

@@ -43,7 +43,7 @@ model OrganizationMember {
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   userId         String
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   role           UserRole     @default(MEMBER)
   createdAt      DateTime     @default(now())
 
@@ -75,7 +75,7 @@ model ApiKey {
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   createdBy      String
-  creator        User         @relation(fields: [createdBy], references: [id])
+  creator        User         @relation(fields: [createdBy], references: [id], onUpdate: Cascade)
   lastUsedAt     DateTime?
   expiresAt      DateTime?
   isRevoked      Boolean      @default(false)
